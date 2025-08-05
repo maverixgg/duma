@@ -1,3 +1,5 @@
+#include "maze_info.h"
+
 // move one cell forward and also poll adc for wall values
 void advanceOneCell(int d, struct coor* c, struct wall_maze* wm) {
 	resetEncoder();
@@ -35,6 +37,8 @@ void advanceOneCell(int d, struct coor* c, struct wall_maze* wm) {
 	}
 	
   goOneCell();
+	motor(0,0);
+	delay(1000);
 
 			// check for walls to the east and the west
 			switch(d)
@@ -50,10 +54,9 @@ void advanceOneCell(int d, struct coor* c, struct wall_maze* wm) {
 			default:
 			break;
 			}
-		}
-	}
 	resetEncoder();
 }
+
 
 
 void checkForWalls(struct wall_maze* wm, struct coor* c, int direction, int n, int e, int s, int w)

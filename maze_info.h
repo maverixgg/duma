@@ -1,3 +1,6 @@
+#ifndef MAZE_INFO_H
+#define MAZE_INFO_H
+
 // struct to hold distance info
 struct dist_maze{
     int distance[16][16];
@@ -27,3 +30,5 @@ struct stack{
 	int index;
 };
 
+
+#endif

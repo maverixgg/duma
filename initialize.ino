@@ -1,3 +1,5 @@
+#include "maze_info.h"
+
 void init_distance_maze(struct dist_maze* dm, struct coor* c, int center)
 {
 	// If we are trying to get to the center

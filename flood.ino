@@ -1,3 +1,5 @@
+#include "maze_info.h"
+
 int floodFill(struct dist_maze* dm, struct coor* c, struct wall_maze* wm, int a, int direction, struct stack* upst)
 {
 	// Disable tracking interrupts because we do not want to move yet
@@ -64,7 +66,7 @@ int floodFill(struct dist_maze* dm, struct coor* c, struct wall_maze* wm, int a,
 		else
 		{
 					// advance one cell without scanning for walls
-					advanceOneCellVisited();
+					// advanceOneCellVisited();
 		}
 
 		// if we are at target destination
@@ -117,7 +119,6 @@ int floodFill(struct dist_maze* dm, struct coor* c, struct wall_maze* wm, int a,
 			break;
 		case 1:
 			leftPivot();
-			uncontrolledAdvanceTicks(450);
 			break;
 		case 2:
 			pivot180();

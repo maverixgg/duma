@@ -1,7 +1,7 @@
 // Rotation PID Constants (tune these!)
 const float rot_kp = 1;    // Start with these values
 const float rot_ki = 0;
-const float rot_kd = 0.05;
+const float rot_kd = 0.07;
 
 void leftPivot() {  
   // 2. Reset PID variables
