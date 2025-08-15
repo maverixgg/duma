@@ -19,6 +19,22 @@ void  motor(int a, int b){
     digitalWrite(rmb, 1);
   }
 
-  ledcWrite(lms, a);
   ledcWrite(rms, b);
+  ledcWrite(lms, a);
+}
+
+void motorBrake() {
+  // Left short brake
+  digitalWrite(lmf, LOW);
+  digitalWrite(lmb, LOW);
+  ledcWrite(lms, 255);   // brief full brake
+  // Right short brake
+  digitalWrite(rmf, LOW);
+  digitalWrite(rmb, LOW);
+  ledcWrite(rms, 255);
+  delay(20);             // 10–40 ms tune
+
+  // Release to hold (no torque)
+  ledcWrite(lms, 0);
+  ledcWrite(rms, 0);
 }

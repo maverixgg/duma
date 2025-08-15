@@ -18,5 +18,7 @@ void pivot180();
 void resetEncoder();
 void IRAM_ATTR readLeftEncoder();
 void IRAM_ATTR readRightEncoder();
+void leftWallHugger();
+void rightWallHugger();
 
 #endif

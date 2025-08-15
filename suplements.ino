@@ -36,9 +36,9 @@ void advanceOneCell(int d, struct coor* c, struct wall_maze* wm) {
 		break;
 	}
 	
-  goOneCell();
+  goOneCell2();
 	motor(0,0);
-	delay(1000);
+	delay(500);
 
 			// check for walls to the east and the west
 			switch(d)

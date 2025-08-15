@@ -3,14 +3,9 @@
 int floodFill(struct dist_maze* dm, struct coor* c, struct wall_maze* wm, int a, int direction, struct stack* upst)
 {
 	// Disable tracking interrupts because we do not want to move yet
-	// lockInterruptDisable_TIM3();
-  noInterrupts();
-
 	// coordinate for future use in popping stack
 	int next_move;
 	struct coor next;
-
-  interrupts();
   
 	// while we are not at target destination
 	while(1)
@@ -39,6 +34,7 @@ int floodFill(struct dist_maze* dm, struct coor* c, struct wall_maze* wm, int a,
 					// check for wall straight ahead
 					if(sonarF_read())
 					{
+						frontCalibration();
 						// put wall ahead of us
 						wm->cells[c->x][c->y].walls[direction] = 1;
 						switch(direction)
@@ -66,7 +62,7 @@ int floodFill(struct dist_maze* dm, struct coor* c, struct wall_maze* wm, int a,
 		else
 		{
 					// advance one cell without scanning for walls
-					// advanceOneCellVisited();
+					goOneCell2();
 		}
 
 		// if we are at target destination
@@ -101,34 +97,38 @@ int floodFill(struct dist_maze* dm, struct coor* c, struct wall_maze* wm, int a,
 		switch(difference)
 		{
 		case -3:
-			leftPivot();
+			frontCalibration();
+			turnLeft(leftangle);
+			backError();
 			// calibration because left turn backs up mouse a little bit
 			break;
 		case -2:
-			pivot180();
+			frontCalibration();
+			turn180();
+			backError();
 			// calibration by backing into wall behind us
-			if(wm->cells[c->x][c->y].walls[direction]==1)
-			{
-				
-			}
 			break;
 		case -1:
-			rightPivot();
+			frontCalibration();
+			turnRight(rightangle);
+			backError();
 			break;
 		case 0:
 			break;
 		case 1:
-			leftPivot();
+			frontCalibration();
+			turnLeft(leftangle);
+			backError();
 			break;
 		case 2:
-			pivot180();
-			if(wm->cells[c->x][c->y].walls[direction]==1)
-			{
-
-			}
+			frontCalibration();
+			turn180();
+			backError();
 			break;
 		case 3:
-			rightPivot();
+			frontCalibration();
+			turnRight(rightangle);
+			backError();
 			break;
 		default:
 			break;

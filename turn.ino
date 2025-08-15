@@ -1,157 +1,143 @@
-// Rotation PID Constants (tune these!)
-const float rot_kp = 1;    // Start with these values
-const float rot_ki = 0;
-const float rot_kd = 0.07;
+void turnRight(float rightangle){
+  float kp = 2.75;
+  float kd = 0.01;
 
-void leftPivot() {  
-  // 2. Reset PID variables
-  unsigned long rot_prevT = micros();
-  int rot_eprev = 0;
-  float rot_eintegral = 0;
-  int leftStart = -leftPos;  // Capture initial positions
-  int rightStart = rightPos;
+  prevT = micros();
+  eprev = 0;
 
-  // 3. Rotation loop
-  while (1) {
-    // Safely read encoders
-    int currentLeft, currentRight;
-    noInterrupts();
-    currentLeft = -leftPos;
-    currentRight = rightPos;
-    interrupts();
-    
-    // Calculate current rotation (difference in encoder counts)
-    int actualDiff = (currentRight - rightStart) - (currentLeft - leftStart);
-    Serial.print(actualDiff);
-
-    // Exit condition (5-count tolerance)
-    if (abs(actualDiff - targetDiff) < 30) break;
-
-    // PID Calculations
-    long currT = micros();
-    float deltaT = ((float)(currT - rot_prevT)) / 1.0e6;
-    rot_prevT = currT;
-    
-    // Error Calculation
-    int error = targetDiff - actualDiff;
-
-    float dedt = deltaT > 0 ? (error - rot_eprev) / deltaT : 0;
-    rot_eintegral += error * deltaT;
-    rot_eintegral = constrain(rot_eintegral, -50, 50); // Anti-windup
-    
-    float u = rot_kp * error + rot_kd * dedt + rot_ki * rot_eintegral;
-    int pwr = constrain((int)u, -255, 255);
-    rot_eprev = error;
-
-    // Drive motors in opposite directions
-    motor(-pwr, pwr);
-    
-    delayMicroseconds(500); // Allow ISRs to run
-  }
-  
-  motor(0, 0); // Brake
-  delay(500);
   resetEncoder();
-}
+  mpu.Execute();
+  float startAngle = mpu.GetAngZ();
+  // float targetAngle = 90 + startAngle;
 
-void rightPivot() { 
-  // 2. Reset PID variables
-  unsigned long rot_prevT = micros();
-  int rot_eprev = 0;
-  float rot_eintegral = 0;
-  int leftStart = leftPos;  // Capture initial positions
-  int rightStart = rightPos;
-
-  // 3. Rotation loop
-  while (1) {
-    // Safely read encoders
-    int currentLeft, currentRight;
-    noInterrupts();
-    currentLeft = leftPos;
-    currentRight = rightPos;
-    interrupts();
-    
-    // Calculate current rotation (difference in encoder counts)
-    int actualDiff = (currentRight - rightStart) - (currentLeft - leftStart);
-
-    // Exit condition (5-count tolerance)
-    if (abs(targetDiff + actualDiff) < 30) {motor(0,0);delay(1000); resetEncoder(); return;}
-    
-    // PID Calculations
+  while(1) {
     long currT = micros();
-    float deltaT = ((float)(currT - rot_prevT)) / 1.0e6;
-    rot_prevT = currT;
-    
-    // Error Calculation
-    int error = targetDiff + actualDiff;
+    float deltaT = ((float)(currT - prevT)) / 1.0e6;
+    prevT = currT;
 
-    float dedt = deltaT > 0 ? (error - rot_eprev) / deltaT : 0;
-    rot_eintegral += error * deltaT;
-    rot_eintegral = constrain(rot_eintegral, -50, 50); // Anti-windup
+    mpu.Execute(); // Update sensor readings
     
-    float u = rot_kp * error + rot_kd * dedt + rot_ki * rot_eintegral;
-    int pwr = constrain((int)u, -255, 255);
-    rot_eprev = error;
-    
-    // Drive motors in opposite directions
+    // Check if we've reached target
+    float currentAng = mpu.GetAngZ();
+    if(startAngle >= 90 && startAngle < 180){
+      if(currentAng<0) currentAng += 360;
+    }
+
+    if(fabs(currentAng - startAngle) > rightangle) {
+      motorBrake();
+      break;
+    }
+
+    float error = 90 - fabs(currentAng - startAngle);
+    float dedt = deltaT > 0 ? (error - eprev) / deltaT : 0;
+    eprev = error;
+
+    float u = kp * error + kd * dedt;
+    int pwr = constrain((int)u, 85, 230);
+
     motor(pwr, -pwr);
-    
-    delayMicroseconds(500); // Allow ISRs to run
+
+    delay(3);
   }
   
-  motor(0, 0); // Brake
+  // Stop motors
+  // motor(0, 0);
   delay(500);
   resetEncoder();
-  return;
 }
 
-void pivot180(){
-  // 2. Reset PID variables
-  unsigned long rot_prevT = micros();
-  int rot_eprev = 0;
-  float rot_eintegral = 0;
-  int leftStart = -leftPos;  // Capture initial positions
-  int rightStart = rightPos;
-
-  // 3. Rotation loop
-  while (1) {
-    // Safely read encoders
-    int currentLeft, currentRight;
-    noInterrupts();
-    currentLeft = -leftPos;
-    currentRight = rightPos;
-    interrupts();
-    
-    // Calculate current rotation (difference in encoder counts)
-    int actualDiff = (currentRight - rightStart) - (currentLeft - leftStart);
-    Serial.print(actualDiff);
-
-    // Exit condition (5-count tolerance)
-    if (abs(actualDiff - target180) < 30) break;
-
-    // PID Calculations
-    long currT = micros();
-    float deltaT = ((float)(currT - rot_prevT)) / 1.0e6;
-    rot_prevT = currT;
-    
-    // Error Calculation
-    int error = target180 - actualDiff;
-
-    float dedt = deltaT > 0 ? (error - rot_eprev) / deltaT : 0;
-    rot_eintegral += error * deltaT;
-    rot_eintegral = constrain(rot_eintegral, -50, 50); // Anti-windup
-    
-    float u = rot_kp * error + rot_kd * dedt + rot_ki * rot_eintegral;
-    int pwr = constrain((int)u, -255, 255);
-    rot_eprev = error;
-
-    // Drive motors in opposite directions
-    motor(-pwr, pwr);
-    
-    delayMicroseconds(500); // Allow ISRs to run
-  }
+void turnLeft(float leftangle){
+  resetEncoder();
   
-  motor(0, 0); // Brake
+  float kp = 2.75;
+  float kd = 0.025;
+
+  prevT = micros();
+  eprev = 0;
+  mpu.Execute();
+  float startAngle = mpu.GetAngZ();
+  // float targetAngle = 90 + startAngle;
+
+  while(1) {
+    long currT = micros();
+    float deltaT = ((float)(currT - prevT)) / 1.0e6;
+    prevT = currT;
+
+    mpu.Execute(); // Update sensor readings
+    
+    // Check if we've reached target
+    float currentAng = mpu.GetAngZ();
+    if(startAngle <= -90 && startAngle > -180){
+      if(currentAng>=0) currentAng -= 360;
+    }
+
+    if(fabs(currentAng - startAngle) > leftangle) {
+      motorBrake();
+      break;
+    }
+
+    float error = 90 - fabs(currentAng - startAngle);
+    float dedt = deltaT > 0 ? (error - eprev) / deltaT : 0;
+    eprev = error;
+
+    float u = kp * error + kd * dedt;
+    int pwr = constrain((int)u, 85, 230);
+
+    motor(-pwr, pwr);
+
+    delay(3);
+  }
+
+  // Stop motors
+  motor(0, 0);
+  delay(500);
+  resetEncoder();
+}
+
+void turn180(){
+  float kp = 2.75;
+  float kd = 0.035;
+
+  prevT = micros();
+  eprev = 0;
+  resetEncoder();
+  mpu.Execute();
+  float startAngle = mpu.GetAngZ();
+  // float targetAngle = 90 + startAngle;
+
+  while(1) {
+    long currT = micros();
+    float deltaT = ((float)(currT - prevT)) / 1.0e6;
+    prevT = currT;
+
+    mpu.Execute(); // Update sensor readings
+    
+    // Check if we've reached target
+    float currentAng = mpu.GetAngZ();
+    if(startAngle < 0){
+      if(currentAng>=0) currentAng -= 360;
+    }
+
+    if(fabs(currentAng - startAngle) > 178.0) {
+      motorBrake();
+      motorBrake();
+      break;
+    }
+
+    float error = 180 - fabs(currentAng - startAngle);
+    float dedt = deltaT > 0 ? (error - eprev) / deltaT : 0;
+    eprev = error;
+
+    float u = kp * error + kd * dedt;
+    int pwr = constrain((int)u, 85, 220);
+
+    motor(-pwr, pwr);
+
+    delayMicroseconds(3000);
+  }
+
+  // Stop motors
+  motorBrake();
   delay(500);
   resetEncoder();
 }

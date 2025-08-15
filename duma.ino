@@ -7,8 +7,12 @@
 
 // Sonar Declarations
 #include <NewPing.h>
+#include <Arduino.h>
+#include <TinyMPU6050.h>
 #include "maze_info.h"
 #include "functions.h"
+
+MPU6050 mpu (Wire);
 
 NewPing sonarF(13, 12, 200);
 NewPing sonarL(18, 19, 200);
@@ -32,38 +36,32 @@ NewPing sonarR(14, 27, 200);
 #define RENCA 35
 #define RENCB 34
 
-// LED
-#define ledl 23
-#define ledr 32
-#define ledf 16
-
 // Push Button
 #define btn 17
 
+int straightDelay = 800;
+int pidError = 4;
+
 long prevT = 0;
 float eprev = 0;
-float eintegral = 0;
 
-const uint16_t targetDist = 907;
-const uint16_t targetDiff = 990; 
-const uint16_t target180 = 2100;
+uint16_t targetDist = 690;
+int backTarget = -250;
+const uint16_t targetDiff = 990;
+const uint16_t target180 = 2200;
 
-float kp = 1.2;
-float ki = 0;
-float kd = 0.08;
+float rightangle = 97;
+float leftangle = 89.0;
+
+float kp = 1.5;
+float kd = 0.1;
 
 volatile long leftPos = 0;
 volatile long rightPos = 0;
 
-// PID variables for steering correction
-float steerPrev = 0;
+uint16_t wall = 15;
 
-// PID gains for steering correction
-float kp_steer = 2.0;
-float kd_steer = 0.1;
-
-uint16_t wall = 20;
-
+uint16_t backDelay = 185;
 
 // choose which algorithm to use in the beginning of the run
 int algorithm;
@@ -82,6 +80,9 @@ int direction = NORTH;
 void setup() {
 
   Serial.begin(115200);
+
+  mpu.Initialize();
+  // mpu.Calibrate();
 
   //setup motor driver
   pinMode(lmf, OUTPUT);
@@ -102,11 +103,6 @@ void setup() {
 
   attachInterrupt(digitalPinToInterrupt(LENCA), readLeftEncoder, RISING);
   attachInterrupt(digitalPinToInterrupt(RENCA), readRightEncoder, RISING);
-
-  //LED Setup
-  pinMode(ledl, OUTPUT);
-  pinMode(ledr, OUTPUT);
-  pinMode(ledf, OUTPUT);
 
   //Push Button
   pinMode(btn, INPUT_PULLUP);
@@ -129,23 +125,21 @@ void setup() {
   
   init_coor(&c, 0, 0);
 
-  delay(1500);
-
+  delay(500);
 }
 
 void loop() {
-  // direction = floodFill(&distances, &c, &cell_walls_info, 0, direction, &update_stack);
-  // goOneCell();
-  // if(sonarF_read()){
-  //   while(1){
-  //     motor(0,0);
-  //   }
-  // }
-  // Serial.println(sonarF.ping_cm());
-
-  Serial.print("L: ");
-  Serial.print(leftPos);
-  Serial.print("R: ");
-  Serial.print(rightPos);
-  Serial.println();
+  int r = button_read();
+  if(r == 1) floodFill(&distances, &c, &cell_walls_info, 0, direction, &update_stack);
+  if(r == 2) while(1) {leftWallHugger();};
+  if(r == 3) while(1) {rightWallHugger();};
+  if(r == 4) goOneCell2();
+  if(r == 5) goStraight();
+  if(r == 6) turnRight(rightangle);
+  if(r == 7) turnLeft(leftangle);
+  if(r == 8) turn180();
+  if(r == 9) targetDist += 15;
+  if(r == 10) targetDist -= 15;
+  if(r == 11) rightangle += 1;
+  if(r == 12) rightangle -= 1;
 }
